@@ -1,0 +1,182 @@
+---
+
+author: "Suyash Mohta"
+date: "2024-11-29"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+
+load("HW4.Rdata")
+
+```
+
+
+```{r}
+
+
+sum = 0
+
+t_liked_M_F <- t(Liked_M_F)
+
+## Verifying that number of matches is correct
+sum(t_liked_M_F * Liked_F_M,na.rm = TRUE)
+
+```
+
+```{r}
+
+## Essentially for each column find where abs value of corr > 0.15 for both
+corr_m <- cor(t(Liked_M_F),use = 'pairwise.complete.obs')
+corr_f <- cor(t(Liked_F_M),use = 'pairwise.complete.obs')
+
+```
+
+
+
+
+```{r}
+
+liking_score <- function(Liked, target_M, target_F,male = FALSE){
+  
+  corr_m <- cor(t(Liked_M_F),use = 'pairwise.complete.obs')
+  corr_f <- cor(t(Liked_F_M),use = 'pairwise.complete.obs')
+
+  score <- 0
+  sum_corr <- 0
+  
+  if (male){
+    
+    indices <- which(abs(corr_m[,target_M]) > 0.15)
+    
+    for (i in indices){
+      
+      if (i == target_M){
+        next
+      } 
+      
+      l_i <- 0
+      
+      if (!is.na(Liked_M_F[i, target_F]) ) {
+        
+        if ( Liked_M_F[i, target_F] == 1 && corr_m[i,target_M] > 0 ){
+          l_i <- 1
+        }
+        
+        if ( Liked_M_F[i, target_F] == 0 && corr_m[i,target_M] < 0 ){
+          l_i <- 1
+        }
+    
+        
+      } 
+      
+      score = score + abs( corr_m[i,target_M]  ) * l_i
+      sum_corr = sum_corr + abs( corr_m[i,target_M]  )
+    
+    }
+  
+    
+  }
+  
+  else{
+    
+    indices <- which(abs(corr_f[,target_F]) > 0.15)
+    
+    for (i in indices){
+      
+      if (i == target_F){
+        next
+      } 
+      
+      l_i <- 0
+      
+      if (!is.na(Liked_F_M[i, target_M]) ) {
+        
+        if ( Liked_F_M[i, target_M] == 1 && corr_f[i,target_F] > 0 ){
+          l_i <- 1
+        }
+        
+        if ( Liked_F_M[i, target_M] == 0 && corr_f[i,target_F] < 0 ){
+          l_i <- 1
+        }
+    
+        
+      } 
+      
+      score = score + abs( corr_f[i,target_F] ) * l_i
+      sum_corr = sum_corr + abs( corr_f[i,target_F] )
+    
+    }
+  
+    
+  }
+    
+
+  return (score/ sum_corr)
+  
+}
+
+
+```
+
+
+```{r}
+
+
+lk_score_mat <- matrix(0,nrow = 3,ncol = 3)
+lk_score_male <- matrix(0,nrow = 3,ncol = 3)
+lk_score_female <- matrix(0,nrow = 3,ncol = 3)
+
+for (m in seq(1,3)){
+  for(f in seq(1,3)){
+    lk_score_mat[m,f] <- liking_score( Liked = Liked_F_M, target_M = m, target_F = f , male=FALSE)+
+                         liking_score( Liked = Liked_M_F, target_M = m, target_F = f , male=TRUE)
+    
+    lk_score_male[m,f] <- liking_score( Liked = Liked_M_F, target_M = m, target_F = f , male=TRUE)
+    
+    lk_score_female[m,f] <- liking_score( Liked = Liked_F_M, target_M = m, target_F = f , male=FALSE)
+  } 
+}
+
+
+# Set column and row names
+colnames(lk_score_mat) <- c("Anna", "Elphaba", "Rosie")
+rownames(lk_score_mat) <- c("Fiyero", "Kristoff", "Bruno")
+
+# Set column and row names
+colnames(lk_score_male) <- c("Anna", "Elphaba", "Rosie")
+rownames(lk_score_male) <- c("Fiyero", "Kristoff", "Bruno")
+
+# Set column and row names
+colnames(lk_score_female) <- c("Anna", "Elphaba", "Rosie")
+rownames(lk_score_female) <- c("Fiyero", "Kristoff", "Bruno")
+
+
+## Liking Score for Male (Based on Correlation with other Males and their likes/dislikes to target Female)
+lk_score_male
+
+
+## Liking Score for Female (Based on Correlation with other females and their likes/dislikes to target Man)
+lk_score_female
+
+
+## Match Score (Adding up the Above 2 matrices)
+lk_score_mat
+
+```
+
+```{r}
+
+
+```
+
+
+
